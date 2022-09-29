@@ -40,8 +40,8 @@ namespace BOMTest.ViewModels
             set => SetProperty(ref partAmount, value);
         }
 
-        private string selectedItem;
-        public string SelectedItem
+        private StringWrapper selectedItem;
+        public StringWrapper SelectedItem
         {
             get => selectedItem;
             set => SetProperty(ref selectedItem, value);
@@ -98,8 +98,8 @@ namespace BOMTest.ViewModels
             try
             {
                 if (Server.ClientDic.Count == 0) return;
-                if (Server.ClientDic.ContainsKey(SelectedItem))
-                    Server.ClientDic[SelectedItem].Send(ItemConvertor(Items));
+                if (Server.ClientDic.ContainsKey(SelectedItem.Value))
+                    Server.ClientDic[SelectedItem.Value].Send(ItemConvertor(Items));
             }
             catch (Exception e)
             {
@@ -120,14 +120,17 @@ namespace BOMTest.ViewModels
             }
         }));
 
+        //数据
         public ObservableRangeCollection<ItemData> Items { get; } = new ObservableRangeCollection<ItemData>();
+        //客户端列表
         public ObservableRangeCollection<StringWrapper> ClientList { get; } = new ObservableRangeCollection<StringWrapper>();
 
         public ConnectionToolkit.SocketConnection Server;
 
         public MainViewModel()
         {
-            
+            ServerIP = "192.168.1.100";
+            ServerPort = "9600";
         }
 
         private void UpdateClientList()

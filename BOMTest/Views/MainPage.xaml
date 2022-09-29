@@ -27,7 +27,7 @@
                         Command="{Binding TestCommand}"/>
             </StackLayout>
 
-            <CollectionView Grid.Row="1" ItemsSource="{Binding ClientList}" SelectionMode="Single" SelectedItem="SelectedItem">
+            <CollectionView Grid.Row="1" ItemsSource="{Binding ClientList}" SelectionMode="Single" SelectedItem="{Binding SelectedItem}">
                 <CollectionView.ItemsLayout>
                     <GridItemsLayout Span="1" Orientation="Vertical" />
                 </CollectionView.ItemsLayout>
