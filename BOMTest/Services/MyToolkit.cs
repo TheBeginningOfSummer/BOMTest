@@ -14,23 +14,26 @@ namespace MyToolkit
     {
         public class GetIPAddress
         {
-            public static List<IPAddress> GetIPV4AddressList()
+            public static List<IPAddress> GetAddressList()
             {
-                List<IPAddress> ipAddressList = new List<IPAddress>();
-                string name = Dns.GetHostName();
-                IPAddress[] ipadrlist = Dns.GetHostAddresses(name);
-                foreach (IPAddress ipa in ipadrlist)
+                List<IPAddress> ipList = new List<IPAddress>();
+                IPAddress[] ipadrList = Dns.GetHostAddresses(Dns.GetHostName());
+                //IPHostEntry iPHost = Dns.GetHostEntry(Dns.GetHostName());
+                foreach (IPAddress ipa in ipadrList)
                 {
-                    if (ipa.AddressFamily == AddressFamily.InterNetwork)
-                        ipAddressList.Add(ipa);
+                    //if (ipa.AddressFamily == AddressFamily.InterNetwork)
+                    //    ipList.Add(ipa);
+                    //if (ipa.AddressFamily == AddressFamily.InterNetworkV6)
+                    //    ipV6List.Add(ipa);
+                    ipList.Add(ipa);
                 }
-                return ipAddressList;
+                return ipList;
             }
 
             public static IPAddress GetTargetIPV4Address(string partialIP)
             {
                 string[] targetPart = partialIP.Split('.');
-                foreach (var item in GetIPV4AddressList())
+                foreach (var item in GetAddressList())
                 {
                     string[] part = item.ToString().Split('.');
                     for (int i = 0; i < targetPart.Length; i++)
@@ -641,30 +644,15 @@ namespace MyToolkit
             FileName = fileName;
             ConfigurationPath = path;
             KeyValueList = JsonManager.ReadJsonString<Dictionary<string, string>>(ConfigurationPath, FileName);
+            if (KeyValueList == null) KeyValueList = new Dictionary<string, string>();
             if (keyValues.Length % 2 == 0 && keyValues.Length != 0)
             {
-                if (KeyValueList == null)
+                for (int i = 0; i < keyValues.Length; i += 2)
                 {
-                    KeyValueList = new Dictionary<string, string>();
-                    for (int i = 0; i < keyValues.Length; i += 2)
+                    if (!KeyValueList.ContainsKey(keyValues[i]))
                     {
                         KeyValueList.Add(keyValues[i], keyValues[i + 1]);
-                    }
-                    JsonManager.SaveJsonString(ConfigurationPath, FileName, KeyValueList);
-                }
-                else
-                {
-                    for (int i = 0; i < keyValues.Length; i += 2)
-                    {
-                        if (KeyValueList.ContainsKey(keyValues[i]))
-                        {
-
-                        }
-                        else
-                        {
-                            KeyValueList.Add(keyValues[i], keyValues[i + 1]);
-                            JsonManager.SaveJsonString(ConfigurationPath, FileName, KeyValueList);
-                        }
+                        JsonManager.SaveJsonString(ConfigurationPath, FileName, KeyValueList);
                     }
                 }
             }
@@ -692,6 +680,21 @@ namespace MyToolkit
             else
             {
                 Add(key, value);
+            }
+        }
+
+        public string Load(string key)
+        {
+            try
+            {
+                if (KeyValueList.ContainsKey(key))
+                    return KeyValueList[key];
+                else
+                    return "";
+            }
+            catch (Exception)
+            {
+                return "";
             }
         }
     }
