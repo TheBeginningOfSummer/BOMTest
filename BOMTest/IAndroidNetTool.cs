@@ -7,5 +7,7 @@ namespace BOMTest
     public interface IAndroidNetTool
     {
         List<string> GetIP();
+
+        void GetAddress();
     }
 }

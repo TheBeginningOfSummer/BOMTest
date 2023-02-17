@@ -1,9 +1,14 @@
 ﻿using BOMTest.Models;
+using CommunicationsToolkit;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MvvmHelpers;
 using MyToolkit;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Text;
 using Xamarin.Forms;
 using ObservableObject = CommunityToolkit.Mvvm.ComponentModel.ObservableObject;
@@ -55,11 +60,13 @@ namespace BOMTest.ViewModels
             set => SetProperty(ref selectedItem, value);
         }
         #endregion
-        string ip;
+        
         #region 绑定的指令
         private RelayCommand testCommand;
         public RelayCommand TestCommand => testCommand ?? (testCommand = new RelayCommand(() =>
         {
+            //ReceivedData = Environment.GetFolderPath(Environment.SpecialFolder.) + Environment.NewLine;
+            //ReceivedData = getAddress.GetAddress();
             foreach (var item in getAddress.GetIP())
             {
                 if (item.Split(':')[0] != "fe80")
@@ -101,10 +108,14 @@ namespace BOMTest.ViewModels
             try
             {
                 if (Server != null) Server.StopListening();
-                Server = new ConnectionToolkit.SocketConnection(ServerIP, int.Parse(ServerPort));
+                finsTCPServer = new FinsTCPServer(100, 101);
+                Server = finsTCPServer.Connection;
+                //Server = new ConnectionToolkit.SocketConnection(ServerIP, int.Parse(ServerPort));
+                Server.StartListening(IPAddress.Parse(ServerIP), int.Parse(ServerPort));
                 Server.ClientListUpdate += UpdateClientList;
                 Server.ReceiveFromClient += UpdateClientInfo;
-                Server.StartListening();
+                //Server.StartListening();
+                
                 Shell.Current.DisplayAlert("服务端监听", "监听成功", "确定");
             }
             catch (Exception e)
@@ -180,14 +191,44 @@ namespace BOMTest.ViewModels
         //配置管理实例
         public KeyValueLoader Config;
 
+        FinsTCPServer finsTCPServer;
+
         IAndroidNetTool getAddress;
 
         public MainViewModel()
         {
+            getAddress = DependencyService.Get<IAndroidNetTool>();
             Config = new KeyValueLoader("Configuration.json", "/storage/emulated/0/Documents/BOMTestConfig");
+            //Config = new KeyValueLoader("Configuration.json", getAddress.GetAddress() + "/Pictures");
             ServerIP = Config.Load("ServerIP");
             ServerPort = Config.Load("ServerPort");
-            getAddress = DependencyService.Get<IAndroidNetTool>();
+            
+        }
+
+        public byte[] WordByteReverse(byte[] bytes)
+        {
+            if (bytes == null) return Encoding.ASCII.GetBytes("null:0");
+            if (bytes.Length == 0) return Encoding.ASCII.GetBytes("null:0");
+            List<byte> list = new List<byte>();
+            if ((bytes.Length % 2) == 0)
+            {
+                for (int i = 0; i < bytes.Length; i += 2)
+                {
+                    list.Add(bytes[i + 1]);
+                    list.Add(bytes[i]);
+                }
+                return list.ToArray();
+            }
+            else
+            {
+                for (int i = 0; i < bytes.Length - 1; i += 2)
+                {
+                    list.Add(bytes[i + 1]);
+                    list.Add(bytes[i]);
+                }
+                list.Add(bytes.Last());
+                return list.ToArray();
+            }
         }
 
         private void UpdateClientList()
@@ -199,14 +240,19 @@ namespace BOMTest.ViewModels
 
         private void UpdateClientInfo(System.Net.Sockets.Socket client, byte[] data)
         {
-            ReceivedData = Encoding.UTF8.GetString(data);
+            //ReceivedData = Encoding.UTF8.GetString(data);
+            ReceivedData += DataConverter.BytesToHexString(data) + Environment.NewLine;
         }
 
-        private byte[] ItemConvertor(ObservableRangeCollection<ItemData> Items)
+
+
+        private byte[] ItemConvertor(ObservableRangeCollection<ItemData> Items, bool isReverse = true)
         {
             string data = "";
             foreach (var item in Items)
-                data += item.Name + ":" + item.Amount + ";";
+                data += item.Name + ":" + item.Amount + "; ";
+            if (isReverse)
+                return WordByteReverse(Encoding.ASCII.GetBytes(data));
             return Encoding.ASCII.GetBytes(data);
         }
     }

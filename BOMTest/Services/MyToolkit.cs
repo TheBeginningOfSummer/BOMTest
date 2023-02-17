@@ -69,6 +69,7 @@ namespace MyToolkit
                 SocketItem = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 DataCache = new byte[byteLength];
                 SendByte = new byte[byteLength];
+                ClientDic = new Dictionary<string, Socket>();
             }
 
             public SocketConnection(string ip, int port, int byteLength = 2048)
@@ -178,6 +179,22 @@ namespace MyToolkit
             {
                 try
                 {
+                    SocketItem.Bind(IPEndPoint);
+                    SocketItem.Listen(200);
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(StartAcceptClient), SocketItem);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+                return true;
+            }
+
+            public bool StartListening(IPAddress ip, int port)
+            {
+                try
+                {
+                    IPEndPoint = new IPEndPoint(ip, port);
                     SocketItem.Bind(IPEndPoint);
                     SocketItem.Listen(200);
                     ThreadPool.QueueUserWorkItem(new WaitCallback(StartAcceptClient), SocketItem);

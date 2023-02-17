@@ -45,8 +45,8 @@
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
-                <ScrollView Grid.Column="1">
-                    <Label Margin="2,2,0,0" Text="{Binding ReceivedData}" BackgroundColor="White"/>
+                <ScrollView x:Name="ServerReceive" Grid.Column="1">
+                    <Label Margin="2,2,0,0" Text="{Binding ReceivedData}" BackgroundColor="White" PropertyChanged="Receive_PropertyChanged"/>
                 </ScrollView>
             </Grid>
 

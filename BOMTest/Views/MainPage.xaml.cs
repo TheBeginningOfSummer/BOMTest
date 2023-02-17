@@ -18,5 +18,10 @@ namespace BOMTest.Views
             InitializeComponent();
             BindingContext = ClassLocator.Services.GetService<MainViewModel>();
         }
+
+        private async void Receive_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            await ServerReceive.ScrollToAsync(0, ServerReceive.ContentSize.Height, true);
+        }
     }
 }

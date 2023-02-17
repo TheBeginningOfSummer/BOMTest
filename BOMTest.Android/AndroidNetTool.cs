@@ -9,6 +9,11 @@ namespace BOMTest.Droid
 {
     public class AndroidNetTool : IAndroidNetTool
     {
+        public void GetAddress()
+        {
+            //return Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
+        }
+
         public List<string> GetIP()
         {
             string ipString = "";
