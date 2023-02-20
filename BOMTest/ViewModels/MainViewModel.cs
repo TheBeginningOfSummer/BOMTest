@@ -108,7 +108,7 @@ namespace BOMTest.ViewModels
             try
             {
                 if (Server != null) Server.StopListening();
-                finsTCPServer = new FinsTCPServer(100, 101);
+                finsTCPServer = new FinsTCPServer(110);
                 Server = finsTCPServer.Connection;
                 //Server = new ConnectionToolkit.SocketConnection(ServerIP, int.Parse(ServerPort));
                 Server.StartListening(IPAddress.Parse(ServerIP), int.Parse(ServerPort));
@@ -243,8 +243,6 @@ namespace BOMTest.ViewModels
             //ReceivedData = Encoding.UTF8.GetString(data);
             ReceivedData += DataConverter.BytesToHexString(data) + Environment.NewLine;
         }
-
-
 
         private byte[] ItemConvertor(ObservableRangeCollection<ItemData> Items, bool isReverse = true)
         {

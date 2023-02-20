@@ -4,6 +4,11 @@ using static MyToolkit.DataConverter;
 using static MyToolkit.ByteArrayToolkit;
 using System.Linq;
 using System.Text;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System;
+using System.Threading.Tasks;
 
 namespace CommunicationsToolkit
 {
@@ -15,17 +20,18 @@ namespace CommunicationsToolkit
         public byte[] WArea;
         public byte[] HArea;
         public byte[] DArea;
+        private readonly ConcurrentQueue<ClientData> cache = new ConcurrentQueue<ClientData>();
 
-        public FinsTCPServer(int remoteNode = 0, int serverNode = 0, int wAreaLength = 100, int hAreaLength = 100, int dAreaLength = 100)
+        public FinsTCPServer(int serverNode = 0, int wAreaLength = 100, int hAreaLength = 100, int dAreaLength = 100)
         {
             Connection = new SocketConnection();
-            RemoteNode = remoteNode;
             ServerNode = serverNode;
             WArea = new byte[wAreaLength * 2];
             HArea = new byte[hAreaLength * 2];
             DArea = new byte[dAreaLength * 2];
             Connection.ReceiveFromClient += MessageHandling;
-            byte[] bom = Encoding.ASCII.GetBytes("01151:5;");
+            Task.Run(MessageRespond);
+            byte[] bom = WordByteReverse(Encoding.ASCII.GetBytes("01151:2;"));
             DArea[1] = 0x01; DArea[3] = 0x04; DArea[5] = 0x02;
             bom.CopyTo(DArea, 6);
         }
@@ -36,10 +42,34 @@ namespace CommunicationsToolkit
             if (response != null) client.Send(response);
         }
 
+        private void MessageRespond()
+        {
+            while (true)
+            {
+                try
+                {
+                    Thread.Sleep(200);
+                    while (!cache.IsEmpty)
+                    {
+                        if (!cache.TryDequeue(out ClientData clientData)) continue;
+                        if (clientData.Data != null)
+                        {
+                            byte[] response = ParseMessage(clientData.Data);
+                            if (response != null) clientData.Client.Send(response);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+
+                }
+            }
+        }
+
         public byte[] ParseMessage(byte[] data)
         {
             if (data.Length == 20)
-                return HandshakeResponse();
+                return HandshakeResponse(data);
             else if (data[26] == 0x01 && data[27] == 0x01)
                 return ReadResponse(data);
             else if (data[26] == 0x01 && data[27] == 0x02)
@@ -47,7 +77,7 @@ namespace CommunicationsToolkit
             return default;
         }
 
-        public byte[] HandshakeResponse()
+        public byte[] HandshakeResponse(byte[] data)
         {
             byte[] response = new byte[24];
             response[0] = 0x46;
@@ -56,7 +86,8 @@ namespace CommunicationsToolkit
             response[3] = 0x53;
             response[7] = 0x10;
             response[11] = 0x01;
-            response[19] = (byte)RemoteNode;
+            response[19] = data[19];
+            RemoteNode = data[19];
             response[23] = (byte)ServerNode;
             return response;
         }
@@ -97,7 +128,6 @@ namespace CommunicationsToolkit
             if (data[26] == 0x01 && data[27] == 0x02)
             {
                 byte[] response = data.Take(28).ToArray();
-                response[7] = 0x16;
                 response[16] = 0xC0;
                 int address = TwoBytesToUInt(data.Skip(29).Take(2).ToArray());
                 int arrayLength = TwoBytesToUInt(data.Skip(32).Take(2).ToArray()) * 2;
@@ -118,6 +148,48 @@ namespace CommunicationsToolkit
             return null;
         }
 
+        public static byte[] WordByteReverse(byte[] bytes)
+        {
+            if (bytes == null) return Encoding.ASCII.GetBytes("null:0");
+            if (bytes.Length == 0) return Encoding.ASCII.GetBytes("null:0");
+            List<byte> list = new List<byte>();
+            if ((bytes.Length % 2) == 0)
+            {
+                for (int i = 0; i < bytes.Length; i += 2)
+                {
+                    list.Add(bytes[i + 1]);
+                    list.Add(bytes[i]);
+                }
+                return list.ToArray();
+            }
+            else
+            {
+                for (int i = 0; i < bytes.Length - 1; i += 2)
+                {
+                    list.Add(bytes[i + 1]);
+                    list.Add(bytes[i]);
+                }
+                list.Add(bytes.Last());
+                return list.ToArray();
+            }
+        }
 
+        public static byte[] ReadData(byte[] area, int address, int length)
+        {
+            return area.Skip(address * 2).Take(length * 2).ToArray();
+        }
+
+    }
+
+    public class ClientData
+    {
+        public Socket Client { get; set; }
+        public byte[] Data { get; set; }
+
+        public ClientData(Socket client, byte[] data)
+        {
+            Client = client;
+            Data = data;
+        }
     }
 }
