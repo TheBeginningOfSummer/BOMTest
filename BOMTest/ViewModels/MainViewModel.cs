@@ -13,6 +13,7 @@ using System.Text;
 using Xamarin.Forms;
 using ObservableObject = CommunityToolkit.Mvvm.ComponentModel.ObservableObject;
 
+
 namespace BOMTest.ViewModels
 {
     public class MainViewModel : ObservableObject
@@ -108,14 +109,13 @@ namespace BOMTest.ViewModels
             try
             {
                 if (Server != null) Server.StopListening();
-                finsTCPServer = new FinsTCPServer(110);
-                Server = finsTCPServer.Connection;
-                //Server = new ConnectionToolkit.SocketConnection(ServerIP, int.Parse(ServerPort));
-                Server.StartListening(IPAddress.Parse(ServerIP), int.Parse(ServerPort));
+                //finsTCPServer = new FinsTCPServer(int.Parse(ServerIP.Split('.')[3]));
+                //Server = finsTCPServer.Connection;
+                //Server.StartListening(IPAddress.Parse(ServerIP), int.Parse(ServerPort));
+                Server = new ConnectionToolkit.SocketConnection(ServerIP, int.Parse(ServerPort));
                 Server.ClientListUpdate += UpdateClientList;
                 Server.ReceiveFromClient += UpdateClientInfo;
-                //Server.StartListening();
-                
+                Server.StartListening();
                 Shell.Current.DisplayAlert("服务端监听", "监听成功", "确定");
             }
             catch (Exception e)
@@ -198,11 +198,9 @@ namespace BOMTest.ViewModels
         public MainViewModel()
         {
             getAddress = DependencyService.Get<IAndroidNetTool>();
-            Config = new KeyValueLoader("Configuration.json", "/storage/emulated/0/Documents/BOMTestConfig");
-            //Config = new KeyValueLoader("Configuration.json", getAddress.GetAddress() + "/Pictures");
+            Config = new KeyValueLoader("Config.json", "/storage/emulated/0/Documents/BOMTestConfig");
             ServerIP = Config.Load("ServerIP");
             ServerPort = Config.Load("ServerPort");
-            
         }
 
         public byte[] WordByteReverse(byte[] bytes)
