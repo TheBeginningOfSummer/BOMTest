@@ -1,12 +1,10 @@
 ﻿using BOMTest.Models;
 using CommunicationsToolkit;
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MvvmHelpers;
 using MyToolkit;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -109,13 +107,13 @@ namespace BOMTest.ViewModels
             try
             {
                 if (Server != null) Server.StopListening();
-                //finsTCPServer = new FinsTCPServer(int.Parse(ServerIP.Split('.')[3]));
-                //Server = finsTCPServer.Connection;
-                //Server.StartListening(IPAddress.Parse(ServerIP), int.Parse(ServerPort));
-                Server = new ConnectionToolkit.SocketConnection(ServerIP, int.Parse(ServerPort));
+                finsTCPServer = new FinsTCPServer(int.Parse(ServerIP.Split('.')[3]));
+                Server = finsTCPServer.Connection;
+                Server.StartListening(IPAddress.Parse(ServerIP), int.Parse(ServerPort));
+                //Server = new ConnectionToolkit.SocketConnection(ServerIP, int.Parse(ServerPort));
                 Server.ClientListUpdate += UpdateClientList;
                 Server.ReceiveFromClient += UpdateClientInfo;
-                Server.StartListening();
+                //Server.StartListening();
                 Shell.Current.DisplayAlert("服务端监听", "监听成功", "确定");
             }
             catch (Exception e)
@@ -239,7 +237,7 @@ namespace BOMTest.ViewModels
         private void UpdateClientInfo(System.Net.Sockets.Socket client, byte[] data)
         {
             //ReceivedData = Encoding.UTF8.GetString(data);
-            ReceivedData += DataConverter.BytesToHexString(data) + Environment.NewLine;
+            ReceivedData += DataConverter.BytesToHexString(data.Skip(28).ToArray()) + Environment.NewLine;
         }
 
         private byte[] ItemConvertor(ObservableRangeCollection<ItemData> Items, bool isReverse = true)
